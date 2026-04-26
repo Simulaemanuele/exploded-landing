@@ -1,105 +1,163 @@
 import { useRef, useEffect } from "react";
 import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
-import { Environment, ContactShadows } from "@react-three/drei";
+import { Environment, ContactShadows, Html } from "@react-three/drei";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
-function MockDevice() {
+function MockGamepad() {
   const groupRef = useRef<THREE.Group>(null);
+  const leftJoyconRef = useRef<THREE.Group>(null);
+  const rightJoyconRef = useRef<THREE.Group>(null);
   const screenRef = useRef<THREE.Mesh>(null);
-  const btnRedRef = useRef<THREE.Mesh>(null);
-  const btnBlueRef = useRef<THREE.Mesh>(null);
 
   useEffect(() => {
     const group = groupRef.current;
+    const leftJoy = leftJoyconRef.current;
+    const rightJoy = rightJoyconRef.current;
     const screen = screenRef.current;
-    const btnRed = btnRedRef.current;
-    const btnBlue = btnBlueRef.current;
 
-    if (!group || !screen || !btnRed || !btnBlue) return;
-
-    // Pre render before animation
-    if (
-      !groupRef.current ||
-      !screenRef.current ||
-      !btnRedRef.current ||
-      !btnBlueRef.current
-    )
-      return;
+    if (!group || !screen || !leftJoy || !rightJoy) return;
 
     let ctx = gsap.context(() => {
-      // Timeline
       const tl = gsap.timeline({
         scrollTrigger: {
-          trigger: "#scroll-container", // Tag trigger
-          start: "top top", // top of component touch the top of screen
-          end: "bottom bottom", // bottom of component touch the bottom of screen
+          trigger: "#scroll-container",
+          start: "top top",
+          end: "bottom bottom",
           scrub: 1,
         },
       });
 
-      // Rotate the entire group to see it from above
-      tl.to(
-        group.rotation,
-        { x: -Math.PI / 6, z: Math.PI / 8, duration: 1 },
-        0,
-      );
+      // 1. Rotazione
+      tl.to(group.rotation, { x: Math.PI / 4, y: Math.PI / 6, duration: 2 });
 
-      // Raise Y axis and push Z axis
-      tl.to(screen.position, { y: 1.5, z: 0.5, duration: 1 }, 0);
+      // 2. Esplosione laterale
+      tl.to(leftJoy.position, { x: -3.5, duration: 2 }, ">");
+      tl.to(rightJoy.position, { x: 3.5, duration: 2 }, "<");
 
-      // Push to the right the buttons to see them from above
-      tl.to(btnRed.position, { x: 2.5, y: 1, duration: 1 }, 0);
-      tl.to(btnBlue.position, { x: 2.5, y: 1, z: -1, duration: 1 }, 0);
+      // 3. Schermo si alza
+      tl.to(screen.position, { y: 1.5, z: -1, duration: 2 }, ">");
     });
 
-    return () => ctx.revert(); // Clean animation
+    return () => ctx.revert();
   }, []);
 
   return (
     <group ref={groupRef}>
+      {/* Corpo */}
       <mesh position={[0, 0, 0]}>
-        <boxGeometry args={[4, 0.5, 2.5]} />
-        <meshStandardMaterial color="#2a2a2a" roughness={0.2} metalness={0.8} />
+        <boxGeometry args={[3, 0.4, 2]} />
+        <meshStandardMaterial color="#1f2937" roughness={0.5} />
       </mesh>
 
+      {/* Schermo */}
       <mesh
         ref={screenRef}
-        position={[-0.5, 0.26, 0]}
+        position={[0, 0.21, 0]}
         rotation={[-Math.PI / 2, 0, 0]}
       >
-        <planeGeometry args={[2, 1.5]} />
-        <meshStandardMaterial color="#000000" emissive="#111" />
+        <planeGeometry args={[2.8, 1.8]} />
+        <meshStandardMaterial color="#fff" emissive="#fff" />
+        <Html position={[0, 0, -1.2]} center distanceFactor={10}>
+          <div
+            style={{
+              backgroundColor: "rgba(0,0,0,0.8)",
+              border: "1px solid rgba(255,255,255,0.2)",
+              color: "white",
+              padding: "8px 16px",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "bold",
+              whiteSpace: "nowrap",
+            }}
+          >
+            DISPLAY OLED 4K
+          </div>
+        </Html>
       </mesh>
 
-      <mesh ref={btnRedRef} position={[1.2, 0.3, 0.5]}>
-        <cylinderGeometry args={[0.3, 0.3, 0.2, 32]} />
-        <meshStandardMaterial color="#ef4444" roughness={0.4} />
-      </mesh>
+      {/* Joycon SX */}
+      <group ref={leftJoyconRef} position={[-1.8, 0, 0]}>
+        <mesh>
+          <boxGeometry args={[0.6, 0.4, 2]} />
+          <meshStandardMaterial color="#ef4444" roughness={0.3} />
+        </mesh>
+        <mesh position={[0, 0.3, -0.5]}>
+          <cylinderGeometry args={[0.2, 0.2, 0.2, 32]} />
+          <meshStandardMaterial color="#111" />
+        </mesh>
+        <Html position={[-0.5, 0.5, 0]} center distanceFactor={8}>
+          <div
+            style={{
+              backgroundColor: "#ef4444",
+              color: "white",
+              padding: "4px 12px",
+              borderRadius: "999px",
+              fontSize: "12px",
+              fontWeight: "bold",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Feedback Aptico
+          </div>
+        </Html>
+      </group>
 
-      <mesh ref={btnBlueRef} position={[1.2, 0.3, -0.5]}>
-        <cylinderGeometry args={[0.3, 0.3, 0.2, 32]} />
-        <meshStandardMaterial color="#3b82f6" roughness={0.4} />
-      </mesh>
+      {/* Joycon DX */}
+      <group ref={rightJoyconRef} position={[1.8, 0, 0]}>
+        <mesh>
+          <boxGeometry args={[0.6, 0.4, 2]} />
+          <meshStandardMaterial color="#3b82f6" roughness={0.3} />
+        </mesh>
+        <mesh position={[0, 0.3, 0.5]}>
+          <cylinderGeometry args={[0.2, 0.2, 0.2, 32]} />
+          <meshStandardMaterial color="#111" />
+        </mesh>
+      </group>
     </group>
   );
 }
 
 export default function App() {
   return (
-    <div className="bg-neutral-900 text-white font-sans">
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <Canvas camera={{ position: [0, 5, 5], fov: 45 }}>
+    /* Forziamo lo sfondo scuro e togliamo i margini di default */
+    <div
+      style={{
+        backgroundColor: "#171717",
+        color: "white",
+        fontFamily: "sans-serif",
+        margin: 0,
+        padding: 0,
+        overflowX: "hidden",
+      }}
+    >
+      {/* IL CANVAS E LA TELECAMERA: CSS puro per forzare il 100% del viewport */}
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          zIndex: 0,
+          pointerEvents: "none",
+        }}
+      >
+        {/* FIX: Camera a Z=3 e FOV=30 farà sembrare l'oggetto massiccio */}
+        <Canvas
+          camera={{ position: [0, 1, 3], fov: 100 }}
+          style={{ width: "100%", height: "100%", display: "block" }}
+        >
           <Environment preset="city" />
-          <ambientLight intensity={0.5} />
-          <directionalLight position={[10, 10, 5]} intensity={1} />
-          <MockDevice />
+          <ambientLight intensity={0.8} />
+          <directionalLight position={[10, 10, 5]} intensity={1.5} />
+          <MockGamepad />
           <ContactShadows
-            position={[0, -1, 0]}
-            opacity={0.5}
+            position={[0, -0.8, 0]}
+            opacity={0.6}
             scale={10}
             blur={2}
             far={4}
@@ -107,32 +165,92 @@ export default function App() {
         </Canvas>
       </div>
 
-      <div id="scroll-container" className="relative z-10 w-full h-[300vh]">
-        <section className="h-screen flex flex-col justify-center items-start p-20">
-          <h1 className="text-6xl font-bold mb-4">Pro Device X</h1>
-          <p className="text-2xl text-gray-400">Il futuro nelle tue mani.</p>
-          <p className="mt-8 animate-bounce text-blue-400">
-            ↓ Scrolla per esplodere
+      {/* TESTI HTML: Impaginati con Flexbox inline per non dipendere da Tailwind */}
+      <div
+        id="scroll-container"
+        style={{
+          position: "relative",
+          zIndex: 10,
+          width: "100%",
+          height: "300vh",
+        }}
+      >
+        <section
+          style={{
+            height: "100vh",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "flex-start",
+            padding: "0 10%",
+          }}
+        >
+          <h1
+            style={{
+              fontSize: "4rem",
+              fontWeight: "bold",
+              margin: "0 0 1rem 0",
+            }}
+          >
+            Switch Clone
+          </h1>
+          <p style={{ fontSize: "1.5rem", color: "#a3a3a3", margin: 0 }}>
+            Architettura Modulare.
           </p>
         </section>
 
-        <section className="h-screen flex flex-col justify-center items-end p-20 text-right">
-          <h2 className="text-5xl font-bold mb-4 text-white">
-            Ingegneria di precisione
+        <section
+          style={{
+            height: "100vh",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "flex-end",
+            padding: "0 10%",
+            textAlign: "right",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: "3rem",
+              fontWeight: "bold",
+              margin: "0 0 1rem 0",
+              color: "white",
+            }}
+          >
+            Controller Indipendenti
           </h2>
-          <p className="text-xl text-gray-300 max-w-md">
-            Ogni componente è progettato per garantire le massime prestazioni. I
-            moduli separati assicurano una dissipazione termica perfetta.
+          <p
+            style={{
+              fontSize: "1.25rem",
+              color: "#d4d4d4",
+              maxWidth: "400px",
+              margin: 0,
+            }}
+          >
+            I controller si staccano e diventano pad Bluetooth.
           </p>
         </section>
 
-        <section className="h-screen flex flex-col justify-center items-center">
-          <h2 className="text-5xl font-bold mb-4 text-red-400">
-            Assemblaggio perfetto
+        <section
+          style={{
+            height: "100vh",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: "3rem",
+              fontWeight: "bold",
+              color: "#60a5fa",
+              margin: 0,
+            }}
+          >
+            Performance allo stato puro
           </h2>
-          <button className="mt-8 px-8 py-4 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition pointer-events-auto">
-            Preordina Ora
-          </button>
         </section>
       </div>
     </div>
