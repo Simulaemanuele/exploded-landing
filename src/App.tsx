@@ -4,6 +4,7 @@ import { Canvas } from "@react-three/fiber";
 import { Environment, ContactShadows, Html } from "@react-three/drei";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { EffectComposer, Bloom } from "@react-three/postprocessing";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -60,7 +61,12 @@ function MockGamepad() {
         rotation={[-Math.PI / 2, 0, 0]}
       >
         <planeGeometry args={[2.8, 1.8]} />
-        <meshStandardMaterial color="#fff" emissive="#fff" />
+        <meshStandardMaterial
+          color="#fff"
+          emissive="#fff"
+          emissiveIntensity={1}
+          toneMapped={false}
+        />
         <Html position={[0, 0, -1.2]} center distanceFactor={10}>
           <div
             style={{
@@ -162,6 +168,10 @@ export default function App() {
             blur={2}
             far={4}
           />
+
+          <EffectComposer>
+            <Bloom luminanceTreshold={1} mipmapBlur intensity={1} />
+          </EffectComposer>
         </Canvas>
       </div>
 
